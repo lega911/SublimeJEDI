@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
 from functools import wraps
 from collections import defaultdict
+import time
 
 import jedi
 from jedi.api import environment
@@ -12,6 +13,8 @@ import sublime
 from .facade import JediFacade
 from .console_logging import getLogger
 from .utils import get_settings
+import pydef
+
 
 logger = getLogger(__name__)
 
@@ -160,6 +163,7 @@ class Daemon:
 
         # how to autocomplete arguments
         self.complete_funcargs = settings.get('complete_funcargs')
+        self.pydef = settings.get('pydef')
 
     def request(
             self,
@@ -173,17 +177,35 @@ class Daemon:
         logger.info('Sending request to daemon for "{0}"'.format(request_type))
         logger.debug((request_type, request_kwargs, filename, line, column))
 
-        facade = JediFacade(
-            env=self.env,
-            complete_funcargs=self.complete_funcargs,
-            source=source,
-            line=line + 1,
-            column=column,
-            filename=filename,
-            sys_path=self.sys_path,
-        )
+        answer = None
+        start = time.time()
+        if request_type == 'goto' and self.pydef:
+            try:
+                result = pydef.goto_definition(
+                    path=self.sys_path,
+                    filename=filename,
+                    cursor=(line, column),
+                    source=source
+                )
+                logger.debug('pydef {}'.format(result))
+                if result:
+                    answer = [(result.filename, result.line + 1, 0)]
+            except Exception:
+                import traceback
+                traceback.print_exc()
+        if not answer:
+            facade = JediFacade(
+                env=self.env,
+                complete_funcargs=self.complete_funcargs,
+                source=source,
+                line=line + 1,
+                column=column,
+                filename=filename,
+                sys_path=self.sys_path,
+            )
 
-        answer = facade.get(request_type, request_kwargs)
-        logger.debug('Answer: {0}'.format(answer))
+            answer = facade.get(request_type, request_kwargs)
+
+        logger.debug('Answer ({:.3f}s): {}'.format(time.time() - start, answer))
 
         return answer
