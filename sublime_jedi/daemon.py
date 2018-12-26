@@ -181,15 +181,22 @@ class Daemon:
         start = time.time()
         if request_type == 'goto' and self.pydef:
             try:
+                logger.debug('pydef {}'.format(dict(
+                    path=self.sys_path,
+                    filename=filename,
+                    row=line,
+                    col=column
+                )))
                 result = pydef.goto_definition(
                     path=self.sys_path,
                     filename=filename,
-                    cursor=(line, column),
+                    row=line,
+                    col=column,
                     source=source
                 )
                 logger.debug('pydef {}'.format(result))
                 if result:
-                    answer = [(result.filename, result.line + 1, 0)]
+                    answer = [(result.filename, result.row + 1, 0)]
             except Exception:
                 import traceback
                 traceback.print_exc()
