@@ -48,5 +48,10 @@
     // SublimeREPL integration
     "enable_in_sublime_repl": false,
 
-    "pydef": true
+    //"pydef": false
+    "pydef": {
+        "skip_jedi": false,
+        "auto_path": true,
+        "log": true
+    }
 }

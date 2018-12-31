@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from functools import wraps
 from collections import defaultdict
 import time
+import os
 
 import jedi
 from jedi.api import environment
@@ -174,32 +175,50 @@ class Daemon:
             line,
             column):
         """Send request to daemon process."""
+        # Daemon
+        'Daemon'
+        Daemon
+
         logger.info('Sending request to daemon for "{0}"'.format(request_type))
         logger.debug((request_type, request_kwargs, filename, line, column))
 
+        pydef_log = self.pydef.get('log')
+        path = self.sys_path
+        if self.pydef and self.pydef.get('auto_path'):
+            curdir = os.path.dirname(filename)
+            if not os.path.isfile(os.path.join(curdir, '__init__.py')) and curdir not in path:
+                path = [curdir] + path
+                if pydef_log:
+                    print('+path', curdir)
+
         answer = None
         start = time.time()
-        if request_type == 'goto' and self.pydef:
+        if request_type in ('goto', 'pydef_goto') and self.pydef:
             try:
-                logger.debug('pydef {}'.format(dict(
-                    path=self.sys_path,
-                    filename=filename,
-                    row=line,
-                    col=column
-                )))
+                if pydef_log:
+                    print('pydef {}'.format(dict(
+                        request_type=request_type,
+                        path=path,
+                        filename=filename,
+                        row=line,
+                        col=column
+                    )))
                 result = pydef.goto_definition(
-                    path=self.sys_path,
+                    path=path,
                     filename=filename,
                     row=line,
                     col=column,
                     source=source
                 )
-                logger.debug('pydef {}'.format(result))
+                if pydef_log:
+                    print('pydef ({:.3f}s) {}'.format(time.time() - start, result))
                 if result:
                     answer = [(result.filename, result.row + 1, 0)]
             except Exception:
                 import traceback
                 traceback.print_exc()
+            if self.pydef.get('skip_jedi') or request_type == 'pydef_goto':
+                return answer
         if not answer:
             facade = JediFacade(
                 env=self.env,
@@ -208,7 +227,7 @@ class Daemon:
                 line=line + 1,
                 column=column,
                 filename=filename,
-                sys_path=self.sys_path,
+                sys_path=path,
             )
 
             answer = facade.get(request_type, request_kwargs)

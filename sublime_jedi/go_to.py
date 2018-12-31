@@ -125,12 +125,23 @@ class SublimeJediGoto(BaseLookUpJediCommand, sublime_plugin.TextCommand):
     """
     Go to object definition
     """
+    def is_visible(self):
+        """ The command is visible only for python code """
+        if get_settings(self.view).get('pydef'):
+            return self.view.match_selector(self.view.sel()[0].begin(), "source.python")
+        else:
+            return super().is_visible()
+
+    def is_not_scope(self):
+        return self.view.match_selector(self.view.sel()[0].begin(), "source.python string, source.python comment")
+
     def run(self, edit):
+        print('SublimeJediGoto +++')
         follow_imports = get_settings(self.view)['follow_imports']
         ask_daemon(
             self.view,
             self.handle_definitions,
-            'goto',
+            self.is_not_scope() and 'pydef_goto' or 'goto',
             ask_kwargs={
                 'follow_imports': follow_imports
             },
