@@ -136,7 +136,6 @@ class SublimeJediGoto(BaseLookUpJediCommand, sublime_plugin.TextCommand):
         return self.view.match_selector(self.view.sel()[0].begin(), "source.python string, source.python comment")
 
     def run(self, edit):
-        print('SublimeJediGoto +++')
         follow_imports = get_settings(self.view)['follow_imports']
         ask_daemon(
             self.view,

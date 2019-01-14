@@ -175,14 +175,11 @@ class Daemon:
             line,
             column):
         """Send request to daemon process."""
-        # Daemon
-        'Daemon'
-        Daemon
 
         logger.info('Sending request to daemon for "{0}"'.format(request_type))
         logger.debug((request_type, request_kwargs, filename, line, column))
 
-        pydef_log = self.pydef.get('log')
+        pydef_log = self.pydef and self.pydef.get('log')
         path = self.sys_path
         if self.pydef and self.pydef.get('auto_path'):
             curdir = os.path.dirname(filename)

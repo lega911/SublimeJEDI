@@ -52,7 +52,7 @@ def get_settings(view):
         'enable_in_sublime_repl': enable_in_sublime_repl,
         'sublime_completions_visibility': sublime_completions_visibility,
         'follow_imports': get_settings_param(view, 'follow_imports', True),
-        'pydef': get_settings_param(view, 'pydef', False),
+        'pydef': get_settings_param(view, 'pydef', {'auto_path': True}),
         'completion_timeout': get_settings_param(view, 'comletion_timeout', 3),
     }
 

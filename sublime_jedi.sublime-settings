@@ -52,6 +52,6 @@
     "pydef": {
         "skip_jedi": false,
         "auto_path": true,
-        "log": true
+        "log": false
     }
 }
